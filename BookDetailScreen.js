@@ -13,7 +13,7 @@ const BookDetail = ({ route, navigation }) => {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Image source={{ uri: book.imageUri }} style={styles.bookImage} />
       <Text style={styles.title}>{book.bookTitle}</Text>
       <Text style={styles.author}>By: {book.author}</Text>
@@ -46,20 +46,18 @@ const BookDetail = ({ route, navigation }) => {
         </View>
       </View>
 
-      <Button title="Make a Bid" onPress={() => alert('Place your bid here.')} />
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     padding: 20,
     backgroundColor: '#f5f5f5',
   },
   bookImage: {
     width: '100%',
-    height: '80%',
+    aspectRatio: 3 / 4, // Adjust this to maintain the image ratio
     marginBottom: 10,
     borderRadius: 10,
   },
