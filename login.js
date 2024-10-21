@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, TextInput, StyleSheet, Alert, TouchableOpacity, Text } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CommonActions } from '@react-navigation/native'; // Import CommonActions for stack manipulation
 
@@ -35,25 +35,6 @@ const LoginScreen = ({ navigation }) => {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      // Remove login status
-      await AsyncStorage.removeItem('isLoggedIn');
-      Alert.alert('Success', 'Logged out successfully!');
-
-      // Reset navigation to login screen
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: 'Login' }], // Navigate to the Login screen
-        })
-      );
-    } catch (error) {
-      Alert.alert('Error', 'Failed to logout');
-      console.error(error);
-    }
-  };
-
   return (
     <View style={styles.container}>
       <TextInput
@@ -69,9 +50,10 @@ const LoginScreen = ({ navigation }) => {
         secureTextEntry
         style={styles.input}
       />
-      <Button title="Login" onPress={handleLogin} />
-      {/* Add logout button */}
-      <Button title="Logout" onPress={handleLogout} />
+      {/* Add a button to handle login */}
+      <TouchableOpacity style={styles.button} onPress={handleLogin}>
+        <Text style={styles.buttonText}>Log Ind</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -88,6 +70,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 15,
     paddingHorizontal: 10,
+  },
+  button: {
+    backgroundColor: '#FF5733', // Customize the button color
+    padding: 10,
+    alignItems: 'center',
+    borderRadius: 5,
+  },
+  buttonText: {
+    color: '#fff', // Button text color
+    fontWeight: 'bold',
   },
 });
 

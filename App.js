@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Image, StyleSheet, View, FlatList, Text, TouchableOpacity } from 'react-native';
+import { Image, StyleSheet, View, FlatList, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -17,9 +17,9 @@ const Tab = createBottomTabNavigator();
 
 function LocalHomeScreen({ navigation }) {
   const categories = ['Fiktion', 'Non-fiktion', 'Børnebøger', 'Klassikere', 'Fantasy'];
-  const categoryColors = ['#FFB3BA', '#FFDFBA', '#FFFFBA', '#BAFFC9', '#BAE1FF'];
-  const [books, setBooks] = React.useState([]);
-
+  const categoryColors = ['#FFA500', '#FF8C00', '#FF7F50', '#FF6347', '#FF4500'];
+    const [books, setBooks] = React.useState([]);
+  
   React.useEffect(() => {
     const loadBooks = async () => {
       try {
@@ -60,30 +60,10 @@ function LocalHomeScreen({ navigation }) {
   );
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.scrollContainer}>
       <View style={styles.headerContainer}>
         <Image source={require('./assets/bog.png')} style={styles.reactLogo} />
         <Text style={styles.titleText}>FlipShelf</Text>
-      </View>
-
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.button}
-          activeOpacity={0.7}
-          onPress={() => {
-            console.log('Navigating to Login');
-            navigation.navigate('Login'); // Navigate to LoginScreen
-          }}
-        >
-          <Text style={styles.buttonText}>Log Ind</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.button}
-          activeOpacity={0.7}
-          onPress={() => navigation.navigate('Create User')} // Navigate to CreateUserScreen
-        >
-          <Text style={styles.buttonText}>Opret Bruger</Text>
-        </TouchableOpacity>
       </View>
 
       <View style={styles.stepContainer}>
@@ -108,21 +88,22 @@ function LocalHomeScreen({ navigation }) {
           data={books}
           renderItem={renderBookItem}
           keyExtractor={(item) => item.bookTitle}
-          horizontal={false}
+          numColumns={2} // Set this based on your layout preference
           showsVerticalScrollIndicator={false}
-          numColumns={1}
         />
         <TouchableOpacity
           style={styles.button}
           activeOpacity={0.7}
-          onPress={() => navigation.navigate('Browse')}  >
+          onPress={() => navigation.navigate('Browse')}  
+        >
           <Text style={styles.buttonText}>Se alle bøger</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
+// Tab navigator
 // Tab navigator
 function TabNavigator({ navigation }) {
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
@@ -158,6 +139,14 @@ function TabNavigator({ navigation }) {
         }}
       />
       <Tab.Screen
+        name="Udforsk Bøger" // New Tab Screen for Explore Books
+        component={BrowseScreen} // Use BrowseScreen as the component
+        options={{
+          tabBarLabel: 'Udforsk Bøger',
+          tabBarIcon: ({ color }) => <Icon name="book-outline" size={24} color={color} />, // Change icon as needed
+        }}
+      />
+      <Tab.Screen
         name="Reviews"
         component={ReviewsScreen}
         options={{
@@ -183,46 +172,35 @@ function TabNavigator({ navigation }) {
           tabBarIcon: ({ color }) => <Icon name="person-add-outline" size={24} color={color} />,
         }}
       />
-      <Tab.Screen
-        name="Logout"
-        options={{
-          tabBarLabel: 'Log ud',
-          tabBarIcon: ({ color }) => <Icon name="log-out-outline" size={24} color={color} />,
-        }}
-      >
-        {() => (
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Text style={styles.buttonText}>Log ud</Text>
-          </TouchableOpacity>
-        )}
-      </Tab.Screen>
     </Tab.Navigator>
   );
 }
 
+
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Home">
-        <Stack.Screen 
-          name="Home" 
-          component={TabNavigator} 
-          options={{ headerShown: false }} 
-        />
-        <Stack.Screen 
-          name="Browse" 
-          component={BrowseScreen} 
-          options={{ title: 'Alle Bøger' }} 
-        />
-        <Stack.Screen 
-          name="BookDetail" 
-          component={BookDetail} 
-        />
-        <Stack.Screen 
-          name="Login" 
-          component={LoginScreen} 
-        />
-      </Stack.Navigator>
+<Stack.Navigator initialRouteName="Home">
+  <Stack.Screen 
+    name="Home" 
+    component={TabNavigator} 
+    options={{ headerShown: false }} 
+  />
+  <Stack.Screen 
+    name="Browse" 
+    component={BrowseScreen} 
+    options={{ title: 'Alle Bøger' }} 
+  />
+  <Stack.Screen 
+    name="BookDetail" 
+    component={BookDetail} 
+  />
+  <Stack.Screen 
+    name="Login" 
+    component={LoginScreen} 
+  />
+</Stack.Navigator>
+
     </NavigationContainer>
   );
 }
@@ -235,31 +213,35 @@ const styles = StyleSheet.create({
     padding: 30,
     backgroundColor: '#f5f5f5',
   },
+  scrollContainer: {
+    // No need for flexGrow here, just let it scroll
+  },
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
+    marginTop: 50,
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
     paddingBottom: 10,
     width: '100%',
-    alignSelf: 'stretch',
-  },
+    justifyContent: 'center', // Placerer logo og titel med plads imellem
+  },  
   reactLogo: {
     width: 100,
     height: 100,
-    marginRight: 10,
   },
   titleText: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#333',
+    textAlign: 'left', // Sørg for, at teksten er venstrestillet
   },
   stepContainer: {
     alignItems: 'center',
     marginBottom: 20,
     padding: 20,
-    borderRadius: 10,
+    borderRadius: 0,
     backgroundColor: '#fff',
     shadowColor: '#000',
     shadowOpacity: 0.1,
@@ -272,10 +254,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#FF5733',
-    marginBottom: 10,
   },
   descriptionText: {
-    fontSize: 16,
     textAlign: 'center',
     color: '#666',
   },
@@ -286,62 +266,57 @@ const styles = StyleSheet.create({
   subtitleText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 10,
+    color: '#333',
   },
   categoryItem: {
+    borderRadius: 10,
     padding: 15,
-    borderRadius: 8,
     marginRight: 10,
   },
   categoryText: {
     fontSize: 16,
+    fontWeight: 'bold',
     color: '#fff',
   },
   exploreContainer: {
-    flex: 1,
     width: '100%',
+    padding: 10,
   },
   bookItem: {
-    flexDirection: 'row',
-    marginBottom: 10,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
     backgroundColor: '#fff',
+    borderRadius: 10,
+    margin: 10,
+    padding: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 4,
+    elevation: 3,
+    flex: 1,
+    maxWidth: '48%', // Control the width of book items for multiple columns
   },
   bookImage: {
-    width: 50,
-    height: 75,
-    marginRight: 10,
+    width: '100%',
+    height: 150,
+    borderRadius: 5,
   },
   bookDescription: {
-    flex: 1,
+    paddingTop: 5,
   },
   bookTitle: {
     fontSize: 16,
     fontWeight: 'bold',
   },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginBottom: 20,
-  },
   button: {
-    padding: 10,
-    borderRadius: 5,
     backgroundColor: '#FF5733',
+    borderRadius: 5,
+    padding: 10,
     alignItems: 'center',
-    width: '48%',
+    marginTop: 20,
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
-  },
-  logoutButton: {
-    padding: 10,
-    alignItems: 'center',
+    fontWeight: 'bold',
   },
 });
