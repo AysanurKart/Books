@@ -1,96 +1,94 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // To manage login state
+import { View, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CommonActions } from '@react-navigation/native'; // Import CommonActions for stack manipulation
 
 const LoginScreen = ({ navigation }) => {
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
 
-    const handleLogin = async () => {
-        // Replace this with your actual authentication logic
-        const validUsername = 'user'; // Example valid username
-        const validPassword = 'password'; // Example valid password
+  const handleLogin = async () => {
+    if (!username || !password) {
+      Alert.alert('Error', 'Please enter both username and password');
+      return;
+    }
 
-        if (username === validUsername && password === validPassword) {
-            // Save login state to AsyncStorage
-            await AsyncStorage.setItem('isLoggedIn', 'true');
-            Alert.alert('Login Successful', 'You are now logged in!');
-            navigation.navigate('Home'); // Navigate to the home screen after login
+    try {
+      const userData = await AsyncStorage.getItem('user');
+      if (userData) {
+        const { username: storedUsername, password: storedPassword } = JSON.parse(userData);
+        if (storedUsername === username && storedPassword === password) {
+          // Store login status
+          await AsyncStorage.setItem('isLoggedIn', 'true');
+          Alert.alert('Success', 'Login successful!');
+          // Navigate to the home screen
+          navigation.navigate('Home');
         } else {
-            Alert.alert('Login Failed', 'Invalid username or password. Please try again.');
+          Alert.alert('Error', 'Invalid username or password');
         }
-    };
+      } else {
+        Alert.alert('Error', 'User not found. Please create an account.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to login');
+      console.error(error);
+    }
+  };
 
-    return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Log Ind</Text>
-            <TextInput
-                style={styles.input}
-                placeholder="Brugernavn"
-                value={username}
-                onChangeText={setUsername}
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Adgangskode"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-            />
-            <TouchableOpacity style={styles.button} onPress={handleLogin}>
-                <Text style={styles.buttonText}>Log Ind</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-                style={styles.link}
-                onPress={() => navigation.navigate('Opret')}
-            >
-                <Text style={styles.linkText}>Opret Bruger</Text>
-            </TouchableOpacity>
-        </View>
-    );
+  const handleLogout = async () => {
+    try {
+      // Remove login status
+      await AsyncStorage.removeItem('isLoggedIn');
+      Alert.alert('Success', 'Logged out successfully!');
+
+      // Reset navigation to login screen
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'Login' }], // Navigate to the Login screen
+        })
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to logout');
+      console.error(error);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <TextInput
+        placeholder="Username"
+        value={username}
+        onChangeText={setUsername}
+        style={styles.input}
+      />
+      <TextInput
+        placeholder="Password"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+        style={styles.input}
+      />
+      <Button title="Login" onPress={handleLogin} />
+      {/* Add logout button */}
+      <Button title="Logout" onPress={handleLogout} />
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20,
-        backgroundColor: '#f5f5f5',
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 20,
-    },
-    input: {
-        width: '100%',
-        padding: 10,
-        marginVertical: 10,
-        borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 5,
-    },
-    button: {
-        backgroundColor: '#FF5733',
-        padding: 15,
-        borderRadius: 5,
-        marginTop: 10,
-        width: '100%',
-    },
-    buttonText: {
-        textAlign: 'center',
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    link: {
-        marginTop: 15,
-    },
-    linkText: {
-        color: '#FF5733',
-        fontSize: 16,
-    },
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 20,
+  },
+  input: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    marginBottom: 15,
+    paddingHorizontal: 10,
+  },
 });
 
 export default LoginScreen;

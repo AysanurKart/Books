@@ -1,96 +1,61 @@
+// opret.js
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CreateUserScreen = () => {
-  // State variables to hold input values
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
-  // Function to handle user registration
-  const handleSubmit = () => {
-    if (!name || !email || !password) {
-      Alert.alert('Fejl', 'Udfyld venligst alle felter');
+  const handleCreateUser = async () => {
+    if (!username || !password) {
+      Alert.alert('Error', 'Please enter both username and password');
       return;
     }
-    
-    // Here, you can add logic to send user data to your backend or API
-    Alert.alert('Succes', 'Bruger oprettet!');
-    
-    // Clear input fields
-    setName('');
-    setEmail('');
-    setPassword('');
+
+    // Store user data in AsyncStorage
+    try {
+      const userData = { username, password };
+      await AsyncStorage.setItem('user', JSON.stringify(userData));
+      Alert.alert('Success', 'User created successfully!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to create user');
+      console.error(error);
+    }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Opret Bruger</Text>
-      
       <TextInput
+        placeholder="Username"
+        value={username}
+        onChangeText={setUsername}
         style={styles.input}
-        placeholder="Navn"
-        value={name}
-        onChangeText={setName}
       />
-      
       <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-      />
-      
-      <TextInput
-        style={styles.input}
-        placeholder="Adgangskode"
+        placeholder="Password"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
+        style={styles.input}
       />
-      
-      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-        <Text style={styles.buttonText}>Opret Bruger</Text>
-      </TouchableOpacity>
+      <Button title="Create User" onPress={handleCreateUser} />
     </View>
   );
 };
 
-// Styles for CreateUserScreen
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
     padding: 20,
-    backgroundColor: '#f5f5f5',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
   },
   input: {
-    height: 50,
-    width: '100%',
-    borderColor: '#A1CEDC',
+    height: 40,
+    borderColor: 'gray',
     borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 10,
     marginBottom: 15,
-  },
-  button: {
-    backgroundColor: '#A1CEDC',
-    padding: 10,
-    borderRadius: 5,
-    width: '100%',
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    paddingHorizontal: 10,
   },
 });
 

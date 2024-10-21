@@ -6,9 +6,9 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import ReviewsScreen from './ReviewsScreen'; // Ensure this imports correctly
 import Sell from './sell'; // Ensure this imports correctly
 import CreateUserScreen from './opret'; // Ensure this imports correctly
+import LoginScreen from './login'; // Import your login component
 import BrowseScreen from './BrowseScreen'; // Import BrowseScreen
 import BookDetail from './BookDetailScreen'; // Import BookDetail
-import BookDetail from './login'; // Import BookDetail
 import Icon from 'react-native-vector-icons/Ionicons'; // Import icons
 import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
 
@@ -66,19 +66,21 @@ function LocalHomeScreen({ navigation }) {
         <Text style={styles.titleText}>FlipShelf</Text>
       </View>
 
-      {/* Knapperne mellem logo og banner */}
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.button}
-          activeOpacity={0.7} // Set active opacity here
-          onPress={() => navigation.navigate('login')}
+          activeOpacity={0.7}
+          onPress={() => {
+            console.log('Navigating to Login');
+            navigation.navigate('Login'); // Navigate to LoginScreen
+          }}
         >
           <Text style={styles.buttonText}>Log Ind</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.button}
-          activeOpacity={0.7} // Set active opacity here
-          onPress={() => navigation.navigate('opret')}
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate('Create User')} // Navigate to CreateUserScreen
         >
           <Text style={styles.buttonText}>Opret Bruger</Text>
         </TouchableOpacity>
@@ -100,31 +102,36 @@ function LocalHomeScreen({ navigation }) {
         />
       </View>
 
-<View style={styles.exploreContainer}>
-  <Text style={styles.subtitleText}>Udforsk bøger til salg</Text>
-  <FlatList
-    data={books}
-    renderItem={renderBookItem}
-    keyExtractor={(item) => item.bookTitle}
-    horizontal={false} // Set this to false to make it vertical
-    showsVerticalScrollIndicator={false}
-    numColumns={1} // Use one column to make it full width
-  />
-  <TouchableOpacity
-    style={styles.button}
-    activeOpacity={0.7}
-    onPress={() => navigation.navigate('Browse')}
-  >
-    <Text style={styles.buttonText}>Se alle bøger</Text>
-  </TouchableOpacity>
-</View>
+      <View style={styles.exploreContainer}>
+        <Text style={styles.subtitleText}>Udforsk bøger til salg</Text>
+        <FlatList
+          data={books}
+          renderItem={renderBookItem}
+          keyExtractor={(item) => item.bookTitle}
+          horizontal={false}
+          showsVerticalScrollIndicator={false}
+          numColumns={1}
+        />
+        <TouchableOpacity
+          style={styles.button}
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate('Browse')}  >
+          <Text style={styles.buttonText}>Se alle bøger</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
 // Tab navigator
-function TabNavigator() {
+function TabNavigator({ navigation }) {
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+
+  const handleLogout = async () => {
+    await AsyncStorage.removeItem('isLoggedIn');
+    setIsLoggedIn(false); // Update state to reflect logout
+    navigation.navigate('Login'); // Navigate to Login screen after logout
+  };
 
   React.useEffect(() => {
     const checkLoginStatus = async () => {
@@ -138,8 +145,8 @@ function TabNavigator() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#FF5733', // Active tab color
-        tabBarStyle: { backgroundColor: '#f5f5f5' }, // Tab bar background color
+        tabBarActiveTintColor: '#FF5733',
+        tabBarStyle: { backgroundColor: '#f5f5f5' },
       }}
     >
       <Tab.Screen
@@ -158,7 +165,7 @@ function TabNavigator() {
           tabBarIcon: ({ color }) => <Icon name="star-outline" size={24} color={color} />,
         }}
       />
-      {isLoggedIn ? (
+      {isLoggedIn && ( // Conditionally render the Sell tab
         <Tab.Screen
           name="Sell"
           component={Sell}
@@ -167,7 +174,7 @@ function TabNavigator() {
             tabBarIcon: ({ color }) => <Icon name="cash-outline" size={24} color={color} />,
           }}
         />
-      ) : null}
+      )}
       <Tab.Screen
         name="Create User"
         component={CreateUserScreen}
@@ -176,6 +183,19 @@ function TabNavigator() {
           tabBarIcon: ({ color }) => <Icon name="person-add-outline" size={24} color={color} />,
         }}
       />
+      <Tab.Screen
+        name="Logout"
+        options={{
+          tabBarLabel: 'Log ud',
+          tabBarIcon: ({ color }) => <Icon name="log-out-outline" size={24} color={color} />,
+        }}
+      >
+        {() => (
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Text style={styles.buttonText}>Log ud</Text>
+          </TouchableOpacity>
+        )}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 }
@@ -184,11 +204,24 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Home">
-        <Stack.Screen name="Home" component={TabNavigator} options={{ headerShown: false }} />
-        <Stack.Screen name="Login" component={LoginScreen} /> 
-        <Stack.Screen name="Opret" component={CreateUserScreen} />
-        <Stack.Screen name="Browse" component={BrowseScreen} options={{ title: 'Alle Bøger' }} />
-        <Stack.Screen name="BookDetail" component={BookDetail} />
+        <Stack.Screen 
+          name="Home" 
+          component={TabNavigator} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="Browse" 
+          component={BrowseScreen} 
+          options={{ title: 'Alle Bøger' }} 
+        />
+        <Stack.Screen 
+          name="BookDetail" 
+          component={BookDetail} 
+        />
+        <Stack.Screen 
+          name="Login" 
+          component={LoginScreen} 
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -227,73 +260,60 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     padding: 20,
     borderRadius: 10,
-    backgroundColor: '#C9A0DC',
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 4,
+    elevation: 3,
     width: '100%',
-    elevation: 2,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    paddingBottom: 10,
-    alignSelf: 'stretch',
-  },
-  subtitleText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000',
   },
   highlightedSubtitleText: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#FF5733',
+    marginBottom: 10,
   },
   descriptionText: {
     fontSize: 16,
-    color: '#fff',
     textAlign: 'center',
-    paddingHorizontal: 20,
+    color: '#666',
   },
   categoryContainer: {
-    marginTop: 20,
+    marginBottom: 20,
     width: '100%',
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    paddingBottom: 10,
-    alignSelf: 'stretch',
   },
-  exploreContainer: {
-    marginTop: 20,
-    width: '100%',
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    paddingBottom: 10,
-    alignSelf: 'stretch',
+  subtitleText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 10,
   },
   categoryItem: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 10,
-    padding: 10,
-    marginHorizontal: 10,
-    elevation: 2,
-    height: 60,
-    width: 80,
+    padding: 15,
+    borderRadius: 8,
+    marginRight: 10,
   },
   categoryText: {
-    color: '#333',
-    fontSize: 14,
-    textAlign: 'center',
+    fontSize: 16,
+    color: '#fff',
+  },
+  exploreContainer: {
+    flex: 1,
+    width: '100%',
   },
   bookItem: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 10,
+    marginBottom: 10,
     padding: 10,
-    margin: 5,
-    elevation: 2,
-    width: '100%',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    backgroundColor: '#fff',
   },
   bookImage: {
-    width: 60,
-    height: 90,
+    width: 50,
+    height: 75,
     marginRight: 10,
   },
   bookDescription: {
@@ -310,17 +330,18 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   button: {
-    backgroundColor: '#FF5733',
     padding: 10,
     borderRadius: 5,
-    margin: 5,
-    width: '48%', // Adjust width to fit two buttons
+    backgroundColor: '#FF5733',
+    alignItems: 'center',
+    width: '48%',
   },
   buttonText: {
-    textAlign: 'center',
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+  },
+  logoutButton: {
+    padding: 10,
+    alignItems: 'center',
   },
 });
-
