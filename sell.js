@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, TextInput, Button, Alert, ScrollView, FlatList, Image, Text } from 'react-native';
+import { StyleSheet, View, TextInput, Button, Alert, ScrollView, FlatList, Image, Text, TouchableOpacity } from 'react-native'; // Tilføjet TouchableOpacity
 import { Picker } from '@react-native-picker/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
@@ -183,6 +183,19 @@ const SellScreen = ({ navigation }) => {
     }
   };
 
+  const deleteBook = async (bookTitle) => {
+    const updatedBooks = books.filter(book => book.bookTitle !== bookTitle);
+    setBooks(updatedBooks);
+
+    try {
+      await AsyncStorage.setItem('books', JSON.stringify(updatedBooks));
+      Alert.alert('Bogen er blevet slettet.');
+    } catch (error) {
+      console.error("Fejl ved sletning af bogen", error);
+      Alert.alert('Fejl', 'Kunne ikke slette bogen.');
+    }
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.container}>
@@ -228,9 +241,9 @@ const SellScreen = ({ navigation }) => {
           onValueChange={(itemValue) => setCategory(itemValue)}
         >
           <Picker.Item label="Vælg kategori" value="" />
+          <Picker.Item label="Studiebøger" value="studiebøger" />
           <Picker.Item label="Fiktion" value="fiktion" />
           <Picker.Item label="Non-fiktion" value="non-fiktion" />
-          <Picker.Item label="Studiebøger" value="studiebøger" />
         </Picker>
         <TextInput
           style={styles.input}
@@ -269,84 +282,102 @@ const SellScreen = ({ navigation }) => {
           onChangeText={setDescription}
         />
         <Button title="Vælg billede" onPress={selectImage} />
-        {imageUri && <Image source={{ uri: imageUri }} style={styles.imagePreview} />}
+        {imageUri && <Image source={{ uri: imageUri }} style={styles.image} />}
         <Button title="Upload bog" onPress={handleUpload} />
-        <FlatList
-          data={books}
-          renderItem={({ item }) => (
-            <View style={styles.bookItem}>
-              {item.imageUri && <Image source={{ uri: item.imageUri }} style={styles.bookImage} />}
-              <View>
-                <Text style={styles.bookTitle}>{item.bookTitle}</Text>
-                <Text style={styles.bookDetails}>Forfatter: {item.author}</Text>
-                <Text style={styles.bookDetails}>Kategori: {item.category}</Text>
-                <Text style={styles.bookDetails}>Pris: {item.price} DKK</Text>
-              </View>
-            </View>
-          )}
-          keyExtractor={(item, index) => index.toString()}
-        />
+
+        <Text style={styles.title}>Mine bøger</Text>
+<FlatList
+  data={books}
+  keyExtractor={(item) => item.bookTitle}
+  renderItem={({ item }) => (
+    <View style={styles.bookItem}>
+      {item.imageUri && (
+        <Image source={{ uri: item.imageUri }} style={styles.bookImage} />
+      )}
+      <View style={styles.bookDetails}>
+        <Text style={styles.bookTitle}>{item.bookTitle}</Text>
+        <Text>Forfatter: {item.author}</Text>
+        <Text>År: {item.year}</Text>
+        <Text>Forlag: {item.publisher}</Text>
+        <Text>Pris: {item.price} DKK</Text>
+        <Text>Beskrivelse: {item.description}</Text>
       </View>
+      <TouchableOpacity onPress={() => deleteBook(item.bookTitle)}>
+        <Text style={styles.deleteButton}>Slet</Text>
+      </TouchableOpacity>
+    </View>
+  )}
+/>
+</View>
+
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  scrollContainer: {
-    padding: 20,
-  },
   container: {
-    flex: 1,
+    padding: 16,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    padding: 16,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 15,
-    marginTop: 40,
-
+    marginBottom: 16,
   },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 15,
+    borderRadius: 4,
+    padding: 8,
+    marginBottom: 16,
   },
   picker: {
-    height: 50,
-    marginBottom: 15,
-    
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 4,
+    marginBottom: 16,
   },
-  map: {
-    width: '100%',
-    height: 200,
-    marginBottom: 15,
-  },
-  imagePreview: {
+  image: {
     width: 100,
     height: 100,
-    marginBottom: 15,
+    marginBottom: 16,
   },
   bookItem: {
     flexDirection: 'row',
-    marginBottom: 10,
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    padding: 8,
     borderBottomWidth: 1,
     borderColor: '#ccc',
-    paddingBottom: 10,
-    marginTop:40,
-
+    marginBottom: 16,
   },
   bookImage: {
-    width: 50,
-    height: 75,
-    marginRight: 10,
+    width: 80,
+    height: 100,
+    marginRight: 16,
+  },
+  bookDetails: {
+    flex: 1,
   },
   bookTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 4,
   },
-  bookDetails: {
-    fontSize: 14,
+  deleteButton: {
+    marginLeft:20,
+    padding:10,
+    backgroundColor:'red',
+    color: 'white',
+    marginTop: 8,
+  },
+  map: {
+    width: '100%',
+    height: 200,
+    marginBottom: 16,
   },
 });
 
