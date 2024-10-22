@@ -9,20 +9,41 @@ import CreateUserScreen from './opret'; // Ensure this imports correctly
 import LoginScreen from './login'; // Import your login component
 import BrowseScreen from './BrowseScreen'; // Import BrowseScreen
 import BookDetail from './BookDetailScreen'; // Import BookDetail
+import SavedScreen from './SavedScreen'; // Ensure this imports correctly
 import Icon from 'react-native-vector-icons/Ionicons'; // Import icons
 import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
+
+
+const saveBook = async (book, isSaved) => {
+  try {
+    const savedBooks = await AsyncStorage.getItem('savedBooks');
+    const booksArray = savedBooks ? JSON.parse(savedBooks) : [];
+
+    if (!isSaved) {
+      booksArray.push(book);
+      await AsyncStorage.setItem('savedBooks', JSON.stringify(booksArray));
+      alert('Bog gemt!'); 
+    } else {
+      const updatedBooksArray = booksArray.filter(b => b.bookTitle !== book.bookTitle);
+      await AsyncStorage.setItem('savedBooks', JSON.stringify(updatedBooksArray));
+      alert('Bog fjernet fra gemte!'); 
+    }
+  } catch (error) {
+    console.error("Fejl ved gemme af bogen:", error);
+  }
+};
+
+
 function LocalHomeScreen({ navigation }) {
   const [books, setBooks] = React.useState([]);
+  const [savedBooks, setSavedBooks] = React.useState([]);
 
-    // Add this before rendering the component
-const categories = ['Science Fiction', 'Romance', 'Thriller', 'Fantasy', 'Non-fiction']; // Example categories
-// Add this above the render function in LocalHomeScreen
-const categoryColors = ['#FF5733', '#33FF57', '#3357FF', '#FF33A1', '#FF8333']; // Example colors
-
+  const categories = ['Science Fiction', 'Romance', 'Thriller', 'Fantasy', 'Non-fiction'];
+  const categoryColors = ['#FF8C00', '#FFA500', '#FF4500', '#FF6347', '#FFB732'];
 
   React.useEffect(() => {
     const loadBooks = async () => {
@@ -38,31 +59,72 @@ const categoryColors = ['#FF5733', '#33FF57', '#3357FF', '#FF33A1', '#FF8333']; 
       }
     };
 
-    loadBooks();
+    const loadSavedBooks = async () => {
+      try {
+        const storedSavedBooks = await AsyncStorage.getItem('savedBooks');
+        if (storedSavedBooks) {
+          setSavedBooks(JSON.parse(storedSavedBooks));
+        }
+      } catch (error) {
+        console.error("Fejl ved indlæsning af gemte bøger:", error);
+      }
+    };
 
-    // Listen to focus event to refresh when returning to this screen
+    loadBooks();
+    loadSavedBooks();
+
     const unsubscribe = navigation.addListener('focus', () => {
-      loadBooks(); // Reload the books when the screen is focused
+      loadBooks();
+      loadSavedBooks();
     });
 
-    return unsubscribe; // Cleanup the listener on unmount
+    return unsubscribe;
   }, [navigation]);
 
-  const renderBookItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.bookItem}
-      onPress={() => navigation.navigate('BookDetail', { book: item })} // Navigate to BookDetail with the selected book
-    >
-      {item.imageUri && (
-        <Image source={{ uri: item.imageUri }} style={styles.bookImage} />
-      )}
-      <View style={styles.bookDescription}>
-        <Text style={styles.bookTitle}>{item.bookTitle}</Text>
-        <Text>{item.author}</Text>
-        <Text>{item.price} DKK</Text>
+  const renderBookItem = ({ item }) => {
+    const isSaved = savedBooks.find(b => b.bookTitle === item.bookTitle);
+    return (
+      <View style={styles.bookItem}>
+        {item.imageUri && (
+          <Image source={{ uri: item.imageUri }} style={styles.bookImage} />
+        )}
+        <View style={styles.bookDescription}>
+          <Text style={styles.bookTitle}>{item.bookTitle}</Text>
+          <Text>{item.author}</Text>
+          <Text>{item.price} DKK</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.moreButton}
+          onPress={() => navigation.navigate('BookDetail', { book: item })}
+        >
+          <Text style={styles.moreButtonText}>Læs mere</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.saveButton}
+          onPress={async () => {
+            await saveBook(item, isSaved);
+            setSavedBooks(prev => 
+              isSaved 
+              ? prev.filter(b => b.bookTitle !== item.bookTitle) 
+              : [...prev, item]
+            );
+          }}
+        >
+          <Text style={styles.saveButtonText}>{isSaved ? '❤️' : '🤍'}</Text>
+        </TouchableOpacity>
       </View>
-    </TouchableOpacity>
-  );
+    );
+  };
+
+
+const renderRecommendationBanner = (navigation) => (
+  <TouchableOpacity 
+    style={styles.bannerContainer} 
+    onPress={() => navigation.navigate('Reviews')}
+  >
+    <Text style={styles.bannerText}>📚✨ Book Recommendations from New York Times! ✨📚</Text>
+  </TouchableOpacity>
+);
 
 
   const renderCategoryItem = ({ item, index }) => (
@@ -71,18 +133,22 @@ const categoryColors = ['#FF5733', '#33FF57', '#3357FF', '#FF33A1', '#FF8333']; 
     </View>
   );
 
+  const navigateToReviews = () => {
+    navigation.navigate('Reviews'); // Navigate to ReviewsScreen
+  };
+
   return (
     <ScrollView style={styles.scrollContainer}>
       <View style={styles.headerContainer}>
         <Image source={require('./assets/bog.png')} style={styles.reactLogo} />
         <Text style={styles.titleText}>FlipShelf</Text>
       </View>
-
+  
       <View style={styles.stepContainer}>
-        <Text style={styles.highlightedSubtitleText}>Del og opdag brugte bøger</Text>
-        <Text style={styles.descriptionText}>Find din næste yndlingsbog blandt vores udvalg</Text>
-      </View>
-
+  <Text style={styles.highlightedSubtitleText}>Del og opdag brugte bøger </Text>
+  <Text style={styles.descriptionText}>Find din næste yndlingsbog blandt vores udvalg👇</Text>
+</View>
+  
       <View style={styles.categoryContainer}>
         <Text style={styles.subtitleText}>Vælg din kategori</Text>
         <FlatList
@@ -93,14 +159,17 @@ const categoryColors = ['#FF5733', '#33FF57', '#3357FF', '#FF33A1', '#FF8333']; 
           showsHorizontalScrollIndicator={false}
         />
       </View>
-
+  
+      {/* Divider after category selection */}
+      <View style={styles.divider} />
+  
       <View style={styles.exploreContainer}>
         <Text style={styles.subtitleText}>Udforsk bøger til salg</Text>
         <FlatList
           data={books}
           renderItem={renderBookItem}
           keyExtractor={(item) => item.bookTitle}
-          numColumns={2} // Set this based on your layout preference
+          numColumns={2}
           showsVerticalScrollIndicator={false}
         />
         <TouchableOpacity
@@ -111,9 +180,14 @@ const categoryColors = ['#FF5733', '#33FF57', '#3357FF', '#FF33A1', '#FF8333']; 
           <Text style={styles.buttonText}>Se alle bøger</Text>
         </TouchableOpacity>
       </View>
-    </ScrollView>
+  
+      {/* Divider after the book sales section */}
+      <View style={styles.divider} />
+  
+      {renderRecommendationBanner(navigation)}
+      </ScrollView>
   );
-}
+}  
 
 // Tab navigator
 function TabNavigator({ navigation }) {
@@ -161,7 +235,7 @@ function TabNavigator({ navigation }) {
         name="Reviews"
         component={ReviewsScreen}
         options={{
-          tabBarLabel: 'Anmeldelser',
+          tabBarLabel: 'Anbefalinger',
           tabBarIcon: ({ color }) => <Icon name="star-outline" size={24} color={color} />,
         }}
       />
@@ -175,14 +249,14 @@ function TabNavigator({ navigation }) {
           }}
         />
       )}
-      <Tab.Screen
-        name="Create User"
-        component={CreateUserScreen}
+            <Tab.Screen
+        name="Saved Screen"
+        component={SavedScreen}
         options={{
-          tabBarLabel: 'Bruger',
-          tabBarIcon: ({ color }) => <Icon name="person-add-outline" size={24} color={color} />,
+          tabBarLabel: 'Gemt',
+          tabBarIcon: ({ color }) => <Icon name="heart-outline" size={24} color={color} />,
         }}
-      />
+        />
     </Tab.Navigator>
   );
 }
@@ -210,11 +284,18 @@ export default function App() {
     name="Login" 
     component={LoginScreen} 
   />
+  <Stack.Screen 
+  name="Saved" 
+  component={SavedScreen} 
+  options={{ title: 'Gemte Bøger' }} 
+/>
 </Stack.Navigator>
 
     </NavigationContainer>
   );
 }
+
+
 
 const styles = StyleSheet.create({
   container: {
@@ -230,49 +311,47 @@ const styles = StyleSheet.create({
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
-    marginTop: 50,
+    marginTop: 30,
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
-    paddingBottom: 10,
     width: '100%',
     justifyContent: 'center', // Placerer logo og titel med plads imellem
   },  
   reactLogo: {
-    width: 100,
-    height: 100,
+    width: 60,
+    height: 80,
   },
   titleText: {
-    fontSize: 28,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
     textAlign: 'left', // Sørg for, at teksten er venstrestillet
   },
   stepContainer: {
+    backgroundColor: '#D6A600', // Lys blå baggrundsfarve
+    paddingVertical: 90, // Øg den lodrette padding for at gøre banneret højere
+    paddingHorizontal: 15,
     alignItems: 'center',
-    marginBottom: 20,
-    padding: 20,
-    borderRadius: 0,
-    backgroundColor: '#fff',
     shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 4,
-    elevation: 3,
-    width: '100%',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 5,
+    elevation: 5,
+    marginBottom:30,  
   },
   highlightedSubtitleText: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#FF5733',
+    color: '#fff',
   },
   descriptionText: {
     textAlign: 'center',
-    color: '#666',
+    color: '#fff',
   },
   categoryContainer: {
     marginBottom: 20,
     width: '100%',
+    paddingHorizontal:10,
   },
   subtitleText: {
     fontSize: 18,
@@ -329,5 +408,63 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+  moreButton: {
+    backgroundColor: '#C4C3D0',
+    borderRadius: 5,
+    padding: 10,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  moreButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  bannerContainer: {
+    backgroundColor: '#FF5733',
+    padding: 15,
+    borderRadius: 5,
+    marginVertical: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bannerText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  bannerContainer: {
+    backgroundColor: '#800080', // Lys blå baggrundsfarve
+    paddingVertical: 50, // Øg den lodrette padding for at gøre banneret højere
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    alignItems: 'center',
+    marginVertical: 10,
+    marginHorizontal: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  bannerText: {
+    fontSize: 20, // Øg skriftstørrelsen for at gøre teksten mere synlig
+    fontWeight: 'bold',
+    color: '#fff', // Hvid tekstfarve
+    textAlign: 'center',
+  },
+  divider: {
+    height: 1, // Højden på divideren
+    backgroundColor: '#ccc', // Farven på divideren
+    marginVertical: 20, // Margin mellem sektioner
+    width: '100%', // Bredde på divideren
+  },
+  saveButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+  },
+  saveButtonText: {
+    fontSize: 24, // Adjust size for visibility
   },
 });

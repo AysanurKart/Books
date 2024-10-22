@@ -3,21 +3,26 @@ import { StyleSheet, View, TextInput, Button, Alert, ScrollView, FlatList, Image
 import { Picker } from '@react-native-picker/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
+import MapView, { Marker } from 'react-native-maps';
+import * as Location from 'expo-location';
 
 const SellScreen = ({ navigation }) => {
   const [category, setCategory] = useState('');
-  const [subcategory, setSubCategory] = useState('');
   const [bookTitle, setBookTitle] = useState('');
   const [year, setYear] = useState('');
   const [publisher, setPublisher] = useState('');
   const [price, setPrice] = useState('');
-  const [location, setLocation] = useState('');
-  const [postalCode, setPostalCode] = useState('');
-  const [city, setCity] = useState('');
   const [author, setAuthor] = useState('');
   const [description, setDescription] = useState('');
   const [imageUri, setImageUri] = useState(undefined);
   const [books, setBooks] = useState([]);
+  
+  // Profile related states
+  const [name, setName] = useState('');
+  const [address, setAddress] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [location, setLocation] = useState(null);
 
   useEffect(() => {
     const loadBooks = async () => {
@@ -34,20 +39,53 @@ const SellScreen = ({ navigation }) => {
     };
 
     loadBooks();
+
+    // Get user location for the map
+    const getLocation = async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Tilladelse til at få adgang til din placering er nødvendig for at vise kortet.');
+        return;
+      }
+
+      let userLocation = await Location.getCurrentPositionAsync({});
+      setLocation({
+        latitude: userLocation.coords.latitude,
+        longitude: userLocation.coords.longitude,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      });
+    };
+
+    getLocation();
+
+    // Load user profile
+    const loadProfile = async () => {
+      try {
+        const storedProfile = await AsyncStorage.getItem('userProfile');
+        if (storedProfile) {
+          const { name, address, phone, email } = JSON.parse(storedProfile);
+          setName(name);
+          setAddress(address);
+          setPhone(phone);
+          setEmail(email);
+        }
+      } catch (error) {
+        console.error('Fejl ved indlæsning af profil:', error);
+      }
+    };
+
+    loadProfile();
   }, []);
 
   const handleUpload = async () => {
-    if (bookTitle && category && subcategory && year && publisher && price && author && postalCode && city) {
+    if (bookTitle && category && year && publisher && price && author) {
       const newBook = {
         category,
-        subcategory,
         bookTitle,
         year,
         publisher,
         price,
-        location,
-        postalCode,
-        city,
         author,
         description,
         imageUri,
@@ -73,29 +111,13 @@ const SellScreen = ({ navigation }) => {
 
   const resetFields = () => {
     setCategory('');
-    setSubCategory('');
     setBookTitle('');
     setYear('');
     setPublisher('');
     setPrice('');
-    setLocation('');
-    setPostalCode('');
-    setCity('');
     setAuthor('');
     setDescription('');
     setImageUri(undefined);
-  };
-
-  const deleteBook = async (bookToDelete) => {
-    try {
-      const updatedBooks = books.filter(book => book.bookTitle !== bookToDelete.bookTitle);
-      setBooks(updatedBooks);
-      await AsyncStorage.setItem('books', JSON.stringify(updatedBooks));
-      Alert.alert('Bogen er blevet slettet!', `Titel: ${bookToDelete.bookTitle}`);
-    } catch (error) {
-      console.error("Fejl ved sletning af bog:", error);
-      Alert.alert('Fejl', 'Kunne ikke slette bogen.');
-    }
   };
 
   const selectImage = () => {
@@ -144,57 +166,83 @@ const SellScreen = ({ navigation }) => {
     }
   };
 
+  const saveProfile = async () => {
+    const profileData = {
+      name,
+      address,
+      phone,
+      email,
+    };
+
+    try {
+      await AsyncStorage.setItem('userProfile', JSON.stringify(profileData));
+      Alert.alert('Profil gemt!', 'Dine oplysninger er blevet gemt.');
+    } catch (error) {
+      console.error('Fejl ved gemme profil:', error);
+      Alert.alert('Fejl', 'Kunne ikke gemme profiloplysninger.');
+    }
+  };
+
   return (
-    <View style={styles.container}>
-      <View style={styles.headerContainer}>
-        <Image
-          source={require('./assets/bog.png')}
-          style={styles.logo}
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Brugerprofil</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Navn"
+          value={name}
+          onChangeText={setName}
         />
-        <Text style={styles.headerText}>FlipShelf</Text>
-      </View>
+        <TextInput
+          style={styles.input}
+          placeholder="Adresse"
+          value={address}
+          onChangeText={setAddress}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Telefon"
+          value={phone}
+          onChangeText={setPhone}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+        />
+        {location && (
+          <MapView
+            style={styles.map}
+            initialRegion={location}
+          >
+            <Marker coordinate={location} title="Din placering" />
+          </MapView>
+        )}
+        <Button title="Gem Profil" onPress={saveProfile} />
 
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <Text style={styles.title}>Sælg din bog</Text>
-
+        <Text style={styles.title}>Sælg en bog</Text>
         <Picker
           selectedValue={category}
-          onValueChange={(itemValue) => setCategory(itemValue)}
           style={styles.picker}
+          onValueChange={(itemValue) => setCategory(itemValue)}
         >
           <Picker.Item label="Vælg kategori" value="" />
-          <Picker.Item label="Studiebøger" value="Studiebøger" />
-          <Picker.Item label="Fantasy" value="Fantasy" />
-          <Picker.Item label="Romatisk" value="Romantisk" />
-          <Picker.Item label="Thriller" value="Thriller" />
-          <Picker.Item label="Scifi" value="Scifi" />
-          <Picker.Item label="Romcom" value="Romcom" />
-          <Picker.Item label="Krimi" value="Krimi" />
-          <Picker.Item label="Biografier" value="Biografier" />
-          <Picker.Item label="Sundhed" value="Sundhed" />
-          <Picker.Item label="Mad og Drikke" value="Mad og Drikke" />
-          <Picker.Item label="Økonomi" value="Økonomi" />
-          <Picker.Item label="Erhverv og ledelse" value="Erhverv og ledelse" />
+          <Picker.Item label="Fiktion" value="fiktion" />
+          <Picker.Item label="Non-fiktion" value="non-fiktion" />
+          <Picker.Item label="Studiebøger" value="studiebøger" />
         </Picker>
-
         <TextInput
           style={styles.input}
-          placeholder="Studieretning"
-          value={subcategory}
-          onChangeText={setSubCategory}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Overskrift på bog"
+          placeholder="Titel"
           value={bookTitle}
           onChangeText={setBookTitle}
         />
         <TextInput
           style={styles.input}
-          placeholder="Årstal"
+          placeholder="År"
           value={year}
           onChangeText={setYear}
-          keyboardType="numeric"
         />
         <TextInput
           style={styles.input}
@@ -204,143 +252,102 @@ const SellScreen = ({ navigation }) => {
         />
         <TextInput
           style={styles.input}
+          placeholder="Pris"
+          value={price}
+          onChangeText={setPrice}
+        />
+        <TextInput
+          style={styles.input}
           placeholder="Forfatter"
           value={author}
           onChangeText={setAuthor}
         />
         <TextInput
           style={styles.input}
-          placeholder="Pris"
-          value={price}
-          onChangeText={setPrice}
-          keyboardType="numeric"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Postnummer"
-          value={postalCode}
-          onChangeText={setPostalCode}
-          keyboardType="numeric"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="By"
-          value={city}
-          onChangeText={setCity}
-        />
-        <TextInput
-          style={styles.input}
           placeholder="Beskrivelse"
           value={description}
           onChangeText={setDescription}
-          multiline={true}
-          numberOfLines={4}
         />
-        
-        <Button title="Vælg billede" onPress={selectImage} color="#007AFF" />
-        
-        {imageUri && (
-          <Image source={{ uri: imageUri }} style={styles.imagePreview} />
-        )}
-
-        <Button title="Upload Bog" onPress={handleUpload} color="#007AFF" />
-        
-        <Text style={styles.title}>Dine bøger</Text>
+        <Button title="Vælg billede" onPress={selectImage} />
+        {imageUri && <Image source={{ uri: imageUri }} style={styles.imagePreview} />}
+        <Button title="Upload bog" onPress={handleUpload} />
         <FlatList
           data={books}
           renderItem={({ item }) => (
             <View style={styles.bookItem}>
-              {item.imageUri && (
-                <Image source={{ uri: item.imageUri }} style={styles.bookImage} />
-              )}
+              {item.imageUri && <Image source={{ uri: item.imageUri }} style={styles.bookImage} />}
               <View>
                 <Text style={styles.bookTitle}>{item.bookTitle}</Text>
                 <Text style={styles.bookDetails}>Forfatter: {item.author}</Text>
                 <Text style={styles.bookDetails}>Kategori: {item.category}</Text>
-                <Text style={styles.bookDetails}>År: {item.year}</Text>
-                <Text style={styles.bookDetails}>Pris: {item.price} kr</Text>
-                <Button title="Slet" onPress={() => deleteBook(item)} color="red" />
+                <Text style={styles.bookDetails}>Pris: {item.price} DKK</Text>
               </View>
             </View>
           )}
-          keyExtractor={(item) => item.bookTitle}
+          keyExtractor={(item, index) => index.toString()}
         />
-      </ScrollView>
-    </View>
+      </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+  scrollContainer: {
+    padding: 20,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    paddingHorizontal: 10,
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#f5f5f5',
-  },
-  logo: {
-    width: 50,
-    height: 50,
-    marginRight: 10,
-  },
-  headerText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  scrollContainer: {
-    paddingVertical: 20,
   },
   title: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginVertical: 10,
+    marginBottom: 15,
+    marginTop: 40,
+
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 15,
   },
   picker: {
     height: 50,
-    backgroundColor: '#f0f0f0',
-    marginVertical: 10,
+    marginBottom: 15,
+    
   },
-  input: {
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    marginVertical: 10,
-    paddingHorizontal: 10,
-  },
-  imagePreview: {
+  map: {
     width: '100%',
     height: 200,
-    marginVertical: 10,
-    borderRadius: 10,
+    marginBottom: 15,
+  },
+  imagePreview: {
+    width: 100,
+    height: 100,
+    marginBottom: 15,
   },
   bookItem: {
     flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    borderBottomColor: '#ccc',
+    marginBottom: 10,
     borderBottomWidth: 1,
+    borderColor: '#ccc',
+    paddingBottom: 10,
+    marginTop:40,
+
   },
   bookImage: {
     width: 50,
-    height: 50,
+    height: 75,
     marginRight: 10,
-    borderRadius: 5,
   },
   bookTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
   },
   bookDetails: {
     fontSize: 14,
-    color: '#666',
   },
 });
 
 export default SellScreen;
- 

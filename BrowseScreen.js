@@ -18,15 +18,19 @@ const BrowseScreen = ({ navigation }) => {
         console.error("Fejl ved indlæsning af bøger:", error);
       }
     };
-
+  
     loadBooks();
-  }, []);
+  
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadBooks(); // Reload books whenever the screen is focused
+    });
+  
+    return unsubscribe; // Cleanup the listener on unmount
+  }, [navigation]);
+  
 
   const renderBookItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.bookItem}
-      onPress={() => navigation.navigate('BookDetail', { book: item })}
-    >
+    <View style={styles.bookItem}>
       {item.imageUri && (
         <Image source={{ uri: item.imageUri }} style={styles.bookImage} />
       )}
@@ -39,10 +43,18 @@ const BrowseScreen = ({ navigation }) => {
         <Text>Forlag: {item.publisher}</Text>
         <Text>By: {item.city}, {item.postalCode}</Text>
         <Text>Beskrivelse: {item.description}</Text>
+        
+        {/* Læs mere button */}
+        <TouchableOpacity
+          style={styles.moreButton}
+          onPress={() => navigation.navigate('BookDetail', { book: item })}
+        >
+          <Text style={styles.moreButtonText}>Læs mere</Text>
+        </TouchableOpacity>
       </View>
-    </TouchableOpacity>
+    </View>
   );
-
+  
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Alle Bøger</Text>
@@ -84,6 +96,18 @@ const styles = StyleSheet.create({
   bookTitle: {
     fontWeight: 'bold',
   },
+  moreButton: {
+    marginTop: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    backgroundColor: '#2196F3',
+    borderRadius: 5,
+  },
+  moreButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
 });
+
 
 export default BrowseScreen;
