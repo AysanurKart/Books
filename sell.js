@@ -4,7 +4,7 @@ import { Picker } from '@react-native-picker/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 
-const SellScreen = () => {
+const SellScreen = ({ navigation }) => {
   const [category, setCategory] = useState('');
   const [subcategory, setSubCategory] = useState('');
   const [bookTitle, setBookTitle] = useState('');
@@ -259,7 +259,7 @@ const SellScreen = () => {
                 <Text style={styles.bookDetails}>Kategori: {item.category}</Text>
                 <Text style={styles.bookDetails}>År: {item.year}</Text>
                 <Text style={styles.bookDetails}>Pris: {item.price} kr</Text>
-                <Button title="Slet" onPress={() => deleteBook(item)} color="#FF3B30" />
+                <Button title="Slet" onPress={() => deleteBook(item)} color="red" />
               </View>
             </View>
           )}
@@ -273,13 +273,15 @@ const SellScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: '#fff',
+    paddingHorizontal: 10,
   },
   headerContainer: {
     flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+    padding: 20,
+    backgroundColor: '#f5f5f5',
   },
   logo: {
     width: 50,
@@ -289,42 +291,46 @@ const styles = StyleSheet.create({
   headerText: {
     fontSize: 24,
     fontWeight: 'bold',
+    color: '#333',
   },
   scrollContainer: {
-    paddingBottom: 20,
+    paddingVertical: 20,
   },
   title: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     marginVertical: 10,
   },
   picker: {
     height: 50,
-    width: '100%',
+    backgroundColor: '#f0f0f0',
     marginVertical: 10,
   },
   input: {
     height: 40,
-    borderColor: 'gray',
+    borderColor: '#ccc',
     borderWidth: 1,
-    paddingHorizontal: 10,
     marginVertical: 10,
+    paddingHorizontal: 10,
   },
   imagePreview: {
     width: '100%',
     height: 200,
     marginVertical: 10,
-    resizeMode: 'cover',
+    borderRadius: 10,
   },
   bookItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    padding: 10,
+    borderBottomColor: '#ccc',
+    borderBottomWidth: 1,
   },
   bookImage: {
     width: 50,
     height: 50,
     marginRight: 10,
+    borderRadius: 5,
   },
   bookTitle: {
     fontSize: 16,
@@ -332,8 +338,9 @@ const styles = StyleSheet.create({
   },
   bookDetails: {
     fontSize: 14,
-    color: 'gray',
+    color: '#666',
   },
 });
 
 export default SellScreen;
+ 

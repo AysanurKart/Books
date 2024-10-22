@@ -16,10 +16,14 @@ const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function LocalHomeScreen({ navigation }) {
-  const categories = ['Fiktion', 'Non-fiktion', 'Børnebøger', 'Klassikere', 'Fantasy'];
-  const categoryColors = ['#FFA500', '#FF8C00', '#FF7F50', '#FF6347', '#FF4500'];
-    const [books, setBooks] = React.useState([]);
-  
+  const [books, setBooks] = React.useState([]);
+
+    // Add this before rendering the component
+const categories = ['Science Fiction', 'Romance', 'Thriller', 'Fantasy', 'Non-fiction']; // Example categories
+// Add this above the render function in LocalHomeScreen
+const categoryColors = ['#FF5733', '#33FF57', '#3357FF', '#FF33A1', '#FF8333']; // Example colors
+
+
   React.useEffect(() => {
     const loadBooks = async () => {
       try {
@@ -35,7 +39,14 @@ function LocalHomeScreen({ navigation }) {
     };
 
     loadBooks();
-  }, []);
+
+    // Listen to focus event to refresh when returning to this screen
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadBooks(); // Reload the books when the screen is focused
+    });
+
+    return unsubscribe; // Cleanup the listener on unmount
+  }, [navigation]);
 
   const renderBookItem = ({ item }) => (
     <TouchableOpacity
@@ -52,6 +63,7 @@ function LocalHomeScreen({ navigation }) {
       </View>
     </TouchableOpacity>
   );
+
 
   const renderCategoryItem = ({ item, index }) => (
     <View style={[styles.categoryItem, { backgroundColor: categoryColors[index % categoryColors.length] }]} >
@@ -103,7 +115,6 @@ function LocalHomeScreen({ navigation }) {
   );
 }
 
-// Tab navigator
 // Tab navigator
 function TabNavigator({ navigation }) {
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
