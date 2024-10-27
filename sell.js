@@ -6,6 +6,8 @@ import * as ImagePicker from 'expo-image-picker';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 
+
+// Definerer SellScreen komponenten
 const SellScreen = ({ navigation }) => {
   const [category, setCategory] = useState('');
   const [bookTitle, setBookTitle] = useState('');
@@ -17,17 +19,19 @@ const SellScreen = ({ navigation }) => {
   const [imageUri, setImageUri] = useState(undefined);
   const [books, setBooks] = useState([]);
   
-  // Profile related states
+  // Profile relaterede states
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [location, setLocation] = useState(null);
 
+    // useEffect til at indlæse data ved komponentens opstart
   useEffect(() => {
+        // Funktion til at indlæse bøger fra AsyncStorage
     const loadBooks = async () => {
       try {
-        const storedBooks = await AsyncStorage.getItem('books');
+        const storedBooks = await AsyncStorage.getItem('books'); // Hent bøger fra lagring
         if (storedBooks) {
           setBooks(JSON.parse(storedBooks));
         } else {
@@ -38,11 +42,14 @@ const SellScreen = ({ navigation }) => {
       }
     };
 
-    loadBooks();
+    loadBooks(); // Kald funktionen for at indlæse bøger
 
-    // Get user location for the map
+
+
+
+    // Hent brugerens placering til kortet
     const getLocation = async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
+      let { status } = await Location.requestForegroundPermissionsAsync(); // Anmod om tilladelse til placering
       if (status !== 'granted') {
         alert('Tilladelse til at få adgang til din placering er nødvendig for at vise kortet.');
         return;
@@ -54,17 +61,19 @@ const SellScreen = ({ navigation }) => {
         longitude: userLocation.coords.longitude,
         latitudeDelta: 0.05,
         longitudeDelta: 0.05,
-      });
+      }); // Opdater state med placering
     };
 
-    getLocation();
+    getLocation(); // Kald funktionen for at hente placering
 
-    // Load user profile
+
+
+    // Indlæs brugerprofil
     const loadProfile = async () => {
       try {
         const storedProfile = await AsyncStorage.getItem('userProfile');
         if (storedProfile) {
-          const { name, address, phone, email } = JSON.parse(storedProfile);
+          const { name, address, phone, email } = JSON.parse(storedProfile);  // Parse og opdater state
           setName(name);
           setAddress(address);
           setPhone(phone);
@@ -78,6 +87,8 @@ const SellScreen = ({ navigation }) => {
     loadProfile();
   }, []);
 
+
+  // Funktion til at uploade bogoplysninger
   const handleUpload = async () => {
     if (bookTitle && category && year && publisher && price && author) {
       const newBook = {
@@ -91,11 +102,11 @@ const SellScreen = ({ navigation }) => {
         imageUri,
       };
 
-      const updatedBooks = [...books, newBook];
-      setBooks(updatedBooks);
+      const updatedBooks = [...books, newBook]; // Tilføj den nye bog til listen
+      setBooks(updatedBooks); // Opdater state med bøger
 
       try {
-        await AsyncStorage.setItem('books', JSON.stringify(updatedBooks));
+        await AsyncStorage.setItem('books', JSON.stringify(updatedBooks)); // Gem bøger i lagring
         Alert.alert('Bogen er blevet uploadet!', `Titel: ${bookTitle}, Forfatter: ${author}`);
       } catch (error) {
         console.error("Fejl ved gemme bogen", error);
@@ -105,10 +116,11 @@ const SellScreen = ({ navigation }) => {
       // Reset fields
       resetFields();
     } else {
-      Alert.alert('Fejl', 'Udfyld venligst alle felter.');
+      Alert.alert('Fejl', 'Udfyld venligst alle felter.'); // Meddelelse hvis felter ikke er udfyldt
     }
   };
 
+    // Funktion til at nulstille inputfelter
   const resetFields = () => {
     setCategory('');
     setBookTitle('');
@@ -120,20 +132,22 @@ const SellScreen = ({ navigation }) => {
     setImageUri(undefined);
   };
 
+    // Funktion til at vælge billede
   const selectImage = () => {
     Alert.alert(
       'Vælg billede',
       'Hvordan vil du vælge billedet?',
       [
-        { text: 'Kamera', onPress: openCamera },
-        { text: 'Bibliotek', onPress: openImageLibrary },
-        { text: 'Annuller', style: 'cancel' },
+        { text: 'Kamera', onPress: openCamera }, // Vælg kamera
+        { text: 'Bibliotek', onPress: openImageLibrary },// Vælg fra bibliotek
+        { text: 'Annuller', style: 'cancel' },// Annuller
       ]
     );
   };
 
+    // Funktion til at åbne kameraet
   const openCamera = async () => {
-    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+    const permissionResult = await ImagePicker.requestCameraPermissionsAsync(); // Anmod om tilladelse til kamera
     if (permissionResult.granted === false) {
       alert('Adgang til kameraet er påkrævet!');
       return;
@@ -144,13 +158,14 @@ const SellScreen = ({ navigation }) => {
       quality: 1,
     });
 
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      setImageUri(result.assets[0].uri);
+    if (!result.canceled && result.assets && result.assets.length > 0) { // Tjek om billede er valgt
+      setImageUri(result.assets[0].uri); // Opdater state med billede-URI
     }
   };
 
+    // Funktion til at åbne billedbiblioteket
   const openImageLibrary = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync(); // Anmod om tilladelse til billedbibliotek
     if (permissionResult.granted === false) {
       alert('Adgang til billedbiblioteket er påkrævet!');
       return;
@@ -166,6 +181,7 @@ const SellScreen = ({ navigation }) => {
     }
   };
 
+    // Funktion til at gemme brugerprofil
   const saveProfile = async () => {
     const profileData = {
       name,
@@ -175,7 +191,7 @@ const SellScreen = ({ navigation }) => {
     };
 
     try {
-      await AsyncStorage.setItem('userProfile', JSON.stringify(profileData));
+      await AsyncStorage.setItem('userProfile', JSON.stringify(profileData));  // Gem profil i lagring
       Alert.alert('Profil gemt!', 'Dine oplysninger er blevet gemt.');
     } catch (error) {
       console.error('Fejl ved gemme profil:', error);
@@ -183,8 +199,11 @@ const SellScreen = ({ navigation }) => {
     }
   };
 
+    // Funktion til at slette en bog
   const deleteBook = async (bookTitle) => {
+    // Filtrer bøgerne for at fjerne den valgte
     const updatedBooks = books.filter(book => book.bookTitle !== bookTitle);
+     // Opdater state med bøger
     setBooks(updatedBooks);
 
     try {
@@ -196,6 +215,7 @@ const SellScreen = ({ navigation }) => {
     }
   };
 
+    // Renderer komponenten
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.container}>
@@ -240,6 +260,7 @@ const SellScreen = ({ navigation }) => {
           style={styles.picker}
           onValueChange={(itemValue) => setCategory(itemValue)}
         >
+       {/* Tilføje flere kategorier som nødvendigt */}
           <Picker.Item label="Vælg kategori" value="" />
           <Picker.Item label="Studiebøger" value="studiebøger" />
           <Picker.Item label="Fiktion" value="fiktion" />

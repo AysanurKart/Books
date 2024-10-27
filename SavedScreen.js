@@ -3,14 +3,20 @@ import { View, Text, FlatList, StyleSheet, Button, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SavedScreen = () => {
+  // State til at gemme listen af gemte bøger
   const [savedBooks, setSavedBooks] = React.useState([]);
-  const [refresh, setRefresh] = React.useState(false); // State to trigger refresh
+  // State til at styre opdatering af listen, når en bog fjernes
+  const [refresh, setRefresh] = React.useState(false); // State til at trigger refresh
 
+
+  // useEffect-hook til at hente gemte bøger fra AsyncStorage, når komponenten indlæses eller refresh ændrer sig
   React.useEffect(() => {
     const loadSavedBooks = async () => {
       try {
+        // Henter listen over gemte bøger fra AsyncStorage
         const savedBooksData = await AsyncStorage.getItem('savedBooks');
         if (savedBooksData) {
+          // Opdaterer state med gemte bøger, hvis de findes i AsyncStorage
           setSavedBooks(JSON.parse(savedBooksData));
         }
       } catch (error) {
@@ -19,22 +25,26 @@ const SavedScreen = () => {
     };
 
     loadSavedBooks();
-  }, [refresh]); // Add refresh as a dependency
+  }, [refresh]); // refresh som afhængighed sikrer, at listen opdateres, når en bog fjernes
 
+
+    // Funktion til at fjerne en bog fra den gemte liste baseret på bogens titel
   const removeFromSaved = async (bookTitle) => {
     try {
+        // Henter den aktuelle liste af gemte bøger fra AsyncStorage    
       const savedBooksData = await AsyncStorage.getItem('savedBooks');
       const books = savedBooksData ? JSON.parse(savedBooksData) : [];
 
-      // Filter out the book to be removed
+      // Filtrerer bøger for at fjerne den valgte bog
       const updatedBooks = books.filter(book => book.bookTitle !== bookTitle);
 
-      // Update AsyncStorage with the new list
+      // Opdaterer AsyncStorage med den nye liste uden den slettede bog
       await AsyncStorage.setItem('savedBooks', JSON.stringify(updatedBooks));
 
-      // Update the state to reflect the removed book
-      setRefresh(!refresh); // Toggle refresh state to trigger re-fetch
+      // Toggler refresh-state for at udløse en ny render og opdatere UI'et
+      setRefresh(!refresh); 
 
+      // Viser en besked, når bogen fjernes med succes
       Alert.alert('Success', 'Book removed from saved list');
     } catch (error) {
       console.error("Fejl ved fjernelse af bog:", error);
@@ -42,6 +52,7 @@ const SavedScreen = () => {
     }
   };
 
+    // Renderer hver bog i gemte bøger som en listeitem
   const renderSavedBookItem = ({ item }) => (
     <View style={styles.bookItem}>
       <View style={styles.bookInfo}>

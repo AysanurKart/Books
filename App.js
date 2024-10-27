@@ -3,21 +3,25 @@ import { Image, StyleSheet, View, FlatList, Text, TouchableOpacity, ScrollView }
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import ReviewsScreen from './ReviewsScreen'; // Ensure this imports correctly
-import Sell from './sell'; // Ensure this imports correctly
-import CreateUserScreen from './opret'; // Ensure this imports correctly
-import LoginScreen from './login'; // Import your login component
-import BrowseScreen from './BrowseScreen'; // Import BrowseScreen
-import BookDetail from './BookDetailScreen'; // Import BookDetail
-import SavedScreen from './SavedScreen'; // Ensure this imports correctly
-import Icon from 'react-native-vector-icons/Ionicons'; // Import icons
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
+import ReviewsScreen from './ReviewsScreen'; 
+import Sell from './sell'; 
+import CreateUserScreen from './opret'; // Ikke færdiggjort
+import LoginScreen from './login'; // Ikke færdiggjort
+import BrowseScreen from './BrowseScreen'; 
+import BookDetail from './BookDetailScreen'; 
+import SavedScreen from './SavedScreen'; 
+import Icon from 'react-native-vector-icons/Ionicons'; 
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
 
+// Konfigurerer stack- og tab-navigatorerne til appens navigation
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
 
-
+/* 
+ * Nedstående funktion bruges til at gemme eller fjerne en bog fra "gemte bøger".
+ * Opdaterer AsyncStorage baseret på, om bogen allerede er gemt.
+ */
 const saveBook = async (book, isSaved) => {
   try {
     const savedBooks = await AsyncStorage.getItem('savedBooks');
@@ -37,6 +41,10 @@ const saveBook = async (book, isSaved) => {
   }
 };
 
+/*
+ * Denne hovedskærm, som viser kategorier og lister med bøger til salg.
+ * Henter data fra AsyncStorage ved opstart og hver gang brugeren vender tilbage.
+ */
 
 function LocalHomeScreen({ navigation }) {
   const [books, setBooks] = React.useState([]);
@@ -73,6 +81,7 @@ function LocalHomeScreen({ navigation }) {
     loadBooks();
     loadSavedBooks();
 
+    // Opdaterer bøgerne når skærmen får fokus
     const unsubscribe = navigation.addListener('focus', () => {
       loadBooks();
       loadSavedBooks();
@@ -81,6 +90,8 @@ function LocalHomeScreen({ navigation }) {
     return unsubscribe;
   }, [navigation]);
 
+
+  // Renderer hvert bogelement i listen
   const renderBookItem = ({ item }) => {
     const isSaved = savedBooks.find(b => b.bookTitle === item.bookTitle);
     return (
@@ -116,7 +127,7 @@ function LocalHomeScreen({ navigation }) {
     );
   };
 
-
+  // Renderer banneret med boganbefalinger
 const renderRecommendationBanner = (navigation) => (
   <TouchableOpacity 
     style={styles.bannerContainer} 
@@ -139,6 +150,7 @@ const renderRecommendationBanner = (navigation) => (
 
   return (
     <ScrollView style={styles.scrollContainer}>
+            {/* Hovedbanner og titel */}
       <View style={styles.headerContainer}>
         <Image source={require('./assets/bog.png')} style={styles.reactLogo} />
         <Text style={styles.titleText}>FlipShelf</Text>
@@ -148,7 +160,7 @@ const renderRecommendationBanner = (navigation) => (
   <Text style={styles.highlightedSubtitleText}>Del og opdag brugte bøger </Text>
   <Text style={styles.descriptionText}>Find din næste yndlingsbog blandt vores udvalg👇</Text>
 </View>
-  
+        {/* Valg af kategori */}
       <View style={styles.categoryContainer}>
         <Text style={styles.subtitleText}>Vælg din kategori</Text>
         <FlatList
@@ -159,10 +171,9 @@ const renderRecommendationBanner = (navigation) => (
           showsHorizontalScrollIndicator={false}
         />
       </View>
+        <View style={styles.divider} />
   
-      {/* Divider after category selection */}
-      <View style={styles.divider} />
-  
+        {/* Lister alle bøger til salg */}
       <View style={styles.exploreContainer}>
         <Text style={styles.subtitleText}>Udforsk bøger til salg</Text>
         <FlatList
@@ -172,6 +183,8 @@ const renderRecommendationBanner = (navigation) => (
           numColumns={2}
           showsVerticalScrollIndicator={false}
         />
+
+        {/* Knap til at se alle bøger */}
         <TouchableOpacity
           style={styles.button}
           activeOpacity={0.7}
@@ -189,14 +202,20 @@ const renderRecommendationBanner = (navigation) => (
   );
 }  
 
-// Tab navigator
+/* 
+ * Tab-navigator til at navigere mellem hovedsektionerne i appen
+ * Loginstatus bruges til at betinge visningen af Sælg-fanen.
+ */
 function TabNavigator({ navigation }) {
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
 
+  /* 
+ * Denne Logout funktion virker ikke endnu
+ */
   const handleLogout = async () => {
     await AsyncStorage.removeItem('isLoggedIn');
-    setIsLoggedIn(false); // Update state to reflect logout
-    navigation.navigate('Login'); // Navigate to Login screen after logout
+    setIsLoggedIn(false);
+    navigation.navigate('Login'); 
   };
 
   React.useEffect(() => {
@@ -224,8 +243,8 @@ function TabNavigator({ navigation }) {
         }}
       />
       <Tab.Screen
-        name="Udforsk Bøger" // New Tab Screen for Explore Books
-        component={BrowseScreen} // Use BrowseScreen as the component
+        name="Udforsk Bøger" 
+        component={BrowseScreen} 
         options={{
           tabBarLabel: 'Udforsk Bøger',
           tabBarIcon: ({ color }) => <Icon name="book-outline" size={24} color={color} />, // Change icon as needed
@@ -239,7 +258,7 @@ function TabNavigator({ navigation }) {
           tabBarIcon: ({ color }) => <Icon name="star-outline" size={24} color={color} />,
         }}
       />
-      {isLoggedIn && ( // Conditionally render the Sell tab
+      {isLoggedIn && ( 
         <Tab.Screen
           name="Sell"
           component={Sell}
@@ -296,7 +315,7 @@ export default function App() {
 }
 
 
-
+// Definerer stilarter til de forskellige komponenter i appen
 const styles = StyleSheet.create({
   container: {
     flex: 1,

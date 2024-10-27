@@ -1,15 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, ActivityIndicator, StyleSheet, TextInput, Image, ScrollView } from 'react-native';
 
+// New York Times API-nøgle til at hente boganmeldelser
 const NYT_API_KEY = 'z4jSQg7oGqsLaA7qpXp2qtnKzaYC34su';
 
 const ReviewsScreen = () => {
+// State til opbevaring af bogdata fra API'et
   const [books, setBooks] = useState([]);
+// State til håndtering af indlæsningsstatus (viser en loader, mens data hentes)
   const [loading, setLoading] = useState(true);
+// State til at gemme fejlbeskeder, hvis datahentning mislykkes
   const [error, setError] = useState(null);
+// State til at gemme brugerens søgeterm for filtrering af boglisten
   const [searchTerm, setSearchTerm] = useState('');
+// State til at opbevare den filtrerede liste over bøger baseret på søgetermen
   const [filteredBooks, setFilteredBooks] = useState([]);
 
+// useEffect til at hente bogdata fra New York Times API, når komponenten indlæses første gang
   useEffect(() => {
     const fetchBooks = async () => {
       try {
@@ -20,7 +27,8 @@ const ReviewsScreen = () => {
         if (!response.ok) {
           throw new Error('Failed to fetch data');
         }
-
+    
+        // Parse JSON-responsen og opdaterer `books` og `filteredBooks` med bogdata
         const data = await response.json();
         setBooks(data.results.books);
         setFilteredBooks(data.results.books);
@@ -34,21 +42,26 @@ const ReviewsScreen = () => {
     fetchBooks();
   }, []);
 
+    // useEffect til at filtrere bøger baseret på brugerens input i søgefeltet
   useEffect(() => {
     if (searchTerm) {
+    // Filtrerer bøger, hvor titlen matcher søgetermen (case-insensitive)
       const filtered = books.filter(book =>
         book.title.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredBooks(filtered);
     } else {
+    // Hvis søgetermen er tom, vises hele boglisten 
       setFilteredBooks(books);
     }
   }, [searchTerm, books]);
 
+  // Returnerer en loader, hvis data stadig indlæses
   if (loading) {
     return <ActivityIndicator size="large" color="#007AFF" />;
   }
 
+  // Returnerer en fejlmeddelelse, hvis datahentningen mislykkes
   if (error) {
     return (
       <View style={styles.errorContainer}>
@@ -67,12 +80,14 @@ const ReviewsScreen = () => {
         <Text style={styles.headerText}>FlipShelf</Text>
       </View>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
+       {/* Søgefelt til filtrering af boglisten */}    
         <TextInput
           style={styles.searchInput}
           placeholder="Søg efter bøger..."
           value={searchTerm}
           onChangeText={setSearchTerm}
         />
+        {/* Liste over bøger (filtreret baseret på søgetermen) */}        
         <FlatList
           data={filteredBooks}
           keyExtractor={(item) => item.primary_isbn10}

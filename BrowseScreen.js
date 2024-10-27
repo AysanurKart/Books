@@ -10,7 +10,7 @@ const BrowseScreen = ({ navigation }) => {
       try {
         const storedBooks = await AsyncStorage.getItem('books');
         if (storedBooks) {
-          setBooks(JSON.parse(storedBooks));
+          setBooks(JSON.parse(storedBooks)); // Sætter bøgerne fra AsyncStorage som array
         } else {
           console.log("Ingen bøger fundet i AsyncStorage.");
         }
@@ -19,16 +19,16 @@ const BrowseScreen = ({ navigation }) => {
       }
     };
   
-    loadBooks();
+    loadBooks(); // Initial indlæsning af bøger
   
     const unsubscribe = navigation.addListener('focus', () => {
-      loadBooks(); // Reload books whenever the screen is focused
+      loadBooks(); 
     });
   
-    return unsubscribe; // Cleanup the listener on unmount
+    return unsubscribe; // Oprydning af listener ved afmontering
   }, [navigation]);
   
-
+  // Rendering af hver bog i listen
   const renderBookItem = ({ item }) => (
     <View style={styles.bookItem}>
       {item.imageUri && (
